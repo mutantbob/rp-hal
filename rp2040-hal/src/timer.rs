@@ -1,6 +1,11 @@
 //! Timer Peripheral
-// See [Chapter 4 Section 6](https://datasheets.raspberrypi.org/rp2040/rp2040_datasheet.pdf) for more details
-
+//! 
+//! This module provides access to the RP2040 Timer peripheral.
+//! This peripheral is based around a 64bit counter that increments once per microsecond.
+//! You can read this counter directly to measure elapsed time.
+//! The system also provides 4 alarms which can be used to trigger interrupts at a set time in the future.
+//! 
+//! See [Chapter 4 Section 6](https://datasheets.raspberrypi.org/rp2040/rp2040_datasheet.pdf) for more details
 use embedded_time::duration::Microseconds;
 
 use crate::pac::{RESETS, TIMER};
