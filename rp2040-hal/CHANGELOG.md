@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- None
+- Avoid 64-bit division in clock calculations
 
 ## [0.3.0] - 2021-12-19
 
