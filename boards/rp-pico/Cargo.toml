@@ -30,7 +30,7 @@ i2c-pio = { git = "https://github.com/ithinuel/i2c-pio-rs", rev = "fa155bbae4e85
 heapless = "0.7.9"
 embedded-sdmmc = { git = "https://github.com/rust-embedded-community/embedded-sdmmc-rs.git" }
 smart-leds = "0.3.0"
-ws2812-pio = { git = "https://github.com/ithinuel/ws2812-pio-rs", rev = "fd6b6604d65a66242b52ccf7f24a95ca325991dd" }
+ws2812-pio = { path = "../../pio-drivers/ws2812-pio-rs", version = "0.2.0"}
 ssd1306 = "0.7.0"
 embedded-graphics = "0.7.1"
 hd44780-driver = "0.4.0"
