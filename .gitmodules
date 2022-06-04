@@ -1,6 +1,8 @@
 [submodule "pio-drivers/ws2812-pio-rs"]
 	path = pio-drivers/ws2812-pio-rs
 	url = https://github.com/9names/ws2812-pio-rs
+	branch = rp-hal_0.5.0
 [submodule "pio-drivers/i2c-pio-rs"]
 	path = pio-drivers/i2c-pio-rs
 	url = https://github.com/9names/i2c-pio-rs
+	branch = rp-hal_0.5.0
