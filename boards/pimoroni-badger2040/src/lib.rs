@@ -178,29 +178,14 @@ pub struct Board {
     pub timer: rp2040_hal::Timer,
 }
 
-use hal::gpio::bank0;
 use hal::gpio;
+use hal::gpio::bank0;
 pub struct Buttons {
-    pub a: rp2040_hal::gpio::Pin<
-        bank0::Gpio12,
-        gpio::Input<gpio::Floating>,
-    >,
-    pub b: rp2040_hal::gpio::Pin<
-        bank0::Gpio13,
-        gpio::Input<gpio::Floating>,
-    >,
-    pub c: rp2040_hal::gpio::Pin<
-        bank0::Gpio14,
-        gpio::Input<gpio::Floating>,
-    >,
-    pub up: rp2040_hal::gpio::Pin<
-        bank0::Gpio15,
-        gpio::Input<gpio::Floating>,
-    >,
-    pub down: rp2040_hal::gpio::Pin<
-        bank0::Gpio11,
-        gpio::Input<gpio::Floating>,
-    >,
+    pub a: rp2040_hal::gpio::Pin<bank0::Gpio12, gpio::Input<gpio::Floating>>,
+    pub b: rp2040_hal::gpio::Pin<bank0::Gpio13, gpio::Input<gpio::Floating>>,
+    pub c: rp2040_hal::gpio::Pin<bank0::Gpio14, gpio::Input<gpio::Floating>>,
+    pub up: rp2040_hal::gpio::Pin<bank0::Gpio15, gpio::Input<gpio::Floating>>,
+    pub down: rp2040_hal::gpio::Pin<bank0::Gpio11, gpio::Input<gpio::Floating>>,
 }
 
 // TODO: macroify this?
