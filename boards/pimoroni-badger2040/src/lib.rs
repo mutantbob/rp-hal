@@ -6,6 +6,9 @@ pub extern crate rp2040_hal as hal;
 extern crate cortex_m_rt;
 #[cfg(feature = "rt")]
 pub use cortex_m_rt::entry;
+use hal::gpio;
+use hal::gpio::bank0;
+use hal::gpio::Interrupt;
 pub use hal::pac;
 
 /// The linker will place this boot block at the start of our program image. We
@@ -95,3 +98,103 @@ hal::bsp_pins!(
 );
 
 pub const XOSC_CRYSTAL_FREQ: u32 = 12_000_000;
+
+pub struct Buttons {
+    pub a: rp2040_hal::gpio::Pin<bank0::Gpio12, gpio::Input<gpio::PullDown>>,
+    pub b: rp2040_hal::gpio::Pin<bank0::Gpio13, gpio::Input<gpio::PullDown>>,
+    pub c: rp2040_hal::gpio::Pin<bank0::Gpio14, gpio::Input<gpio::PullDown>>,
+    pub up: rp2040_hal::gpio::Pin<bank0::Gpio15, gpio::Input<gpio::PullDown>>,
+    pub down: rp2040_hal::gpio::Pin<bank0::Gpio11, gpio::Input<gpio::PullDown>>,
+    pub usr: rp2040_hal::gpio::Pin<bank0::Gpio23, gpio::Input<gpio::Floating>>,
+}
+
+impl Buttons {
+    fn interrupt_change(&self, interrupt: Interrupt, enabled: bool) {
+        self.a.set_interrupt_enabled(interrupt, enabled);
+        self.b.set_interrupt_enabled(interrupt, enabled);
+        self.c.set_interrupt_enabled(interrupt, enabled);
+        self.up.set_interrupt_enabled(interrupt, enabled);
+        self.down.set_interrupt_enabled(interrupt, enabled);
+        // Polarity of user button is reversed, so invert interrupt edge here.
+        let interrupt_swap_edge = if interrupt == hal::gpio::Interrupt::EdgeLow {
+            hal::gpio::Interrupt::EdgeHigh
+        } else {
+            hal::gpio::Interrupt::EdgeLow
+        };
+        self.usr.set_interrupt_enabled(interrupt_swap_edge, enabled);
+    }
+    /// Enable triggering interrupt on button presses.
+    /// This will happen on the 'rising edge' of the input pins
+    pub fn enable_interrupt_on_press(&self) {
+        self.interrupt_change(hal::gpio::Interrupt::EdgeHigh, true);
+    }
+    /// Disable triggering interrupt on button presses.
+    /// This will happen on the 'rising edge' of the input pins
+    pub fn disable_interrupt_on_press(&self) {
+        self.interrupt_change(hal::gpio::Interrupt::EdgeHigh, false);
+    }
+    /// Enable triggering interrupt on button presses.
+    /// This will happen on the 'rising edge' of the input pins
+    pub fn enable_interrupt_on_release(&self) {
+        self.interrupt_change(hal::gpio::Interrupt::EdgeLow, true);
+    }
+    /// Disable triggering interrupt on button presses.
+    /// This will happen on the 'rising edge' of the input pins
+    pub fn disable_interrupt_on_release(&self) {
+        self.interrupt_change(hal::gpio::Interrupt::EdgeLow, false);
+    }
+}
+
+pub struct ButtonsRaw {
+    pub data: u8,
+}
+
+/// Read the state of all buttons, store in a u8 as a bitfield (inside ButtonsRaw).
+/// Rely on associated functions for getting button states
+pub fn sample_buttons_raw(buttons: &Buttons) -> ButtonsRaw {
+    use embedded_hal::digital::v2::InputPin;
+    let mut val: u8 = 0;
+    // It is safe to unwrap here, as the pin reads are infallible
+    // For pins that can fail, you should return a result
+    if buttons.a.is_high().unwrap() {
+        val += 1 << 0;
+    }
+    if buttons.b.is_high().unwrap() {
+        val += 1 << 1;
+    }
+    if buttons.c.is_high().unwrap() {
+        val += 1 << 2;
+    }
+    if buttons.up.is_high().unwrap() {
+        val += 1 << 3;
+    }
+    if buttons.down.is_high().unwrap() {
+        val += 1 << 4;
+    }
+    // user_sw logic is inverted compared to other buttons
+    if buttons.usr.is_low().unwrap() {
+        val += 1 << 5;
+    }
+    ButtonsRaw { data: val }
+}
+
+impl ButtonsRaw {
+    pub fn a(&self) -> bool {
+        self.data & (1 << 0) != 0
+    }
+    pub fn b(&self) -> bool {
+        self.data & (1 << 1) != 0
+    }
+    pub fn c(&self) -> bool {
+        self.data & (1 << 2) != 0
+    }
+    pub fn up(&self) -> bool {
+        self.data & (1 << 3) != 0
+    }
+    pub fn down(&self) -> bool {
+        self.data & (1 << 4) != 0
+    }
+    pub fn usr(&self) -> bool {
+        self.data & (1 << 5) != 0
+    }
+}
