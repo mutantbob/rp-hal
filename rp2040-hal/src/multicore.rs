@@ -76,12 +76,6 @@ fn install_stack_guard(stack_bottom: *mut usize) {
     }
 }
 
-#[inline(always)]
-fn core1_setup(stack_bottom: *mut usize) {
-    install_stack_guard(stack_bottom);
-    // TODO: irq priorities
-}
-
 /// Multicore execution management.
 pub struct Multicore<'p> {
     cores: [Core<'p>; 2],
@@ -157,7 +151,7 @@ impl<'p> Core<'p> {
                 entry: &mut ManuallyDrop<F>,
                 stack_bottom: *mut usize,
             ) -> ! {
-                core1_setup(stack_bottom);
+                install_stack_guard(stack_bottom);
 
                 let entry = unsafe { ManuallyDrop::take(entry) };
 
