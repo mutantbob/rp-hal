@@ -104,9 +104,13 @@ impl<'p> Multicore<'p> {
     ) -> Self {
         Self {
             cores: [
-                Core { inner: None },
                 Core {
-                    inner: Some((psm, ppb, sio)),
+                    inner: None,
+                    ppb: None,
+                },
+                Core {
+                    inner: Some((psm, sio)),
+                    ppb: Some(ppb),
                 },
             ],
         }
@@ -120,11 +124,8 @@ impl<'p> Multicore<'p> {
 
 /// A handle for controlling a logical core.
 pub struct Core<'p> {
-    inner: Option<(
-        &'p mut pac::PSM,
-        &'p mut pac::PPB,
-        &'p mut crate::sio::SioFifo,
-    )>,
+    inner: Option<(&'p mut pac::PSM, &'p mut crate::sio::SioFifo)>,
+    ppb: Option<&'p mut pac::PPB>,
 }
 
 impl<'p> Core<'p> {
@@ -141,10 +142,28 @@ impl<'p> Core<'p> {
     where
         F: FnOnce() -> bad::Never + Send + 'static,
     {
-        if let Some((psm, ppb, fifo)) = self.inner.as_mut() {
-            // The first two ignored `u64` parameters are there to take up all of the registers,
-            // which means that the rest of the arguments are taken from the stack,
-            // where we're able to put them from core 0.
+        if let Some(ppb) = &self.ppb {
+            let vector_table = ppb.vtor.read().bits() as usize;
+            self.spawn_inner(stack, entry, vector_table)
+        } else {
+            Err(Error::InvalidCore)
+        }
+    }
+
+    /// Spawn a function on this core.
+    pub fn spawn_inner<F>(
+        &mut self,
+        stack: &'static mut [usize],
+        entry: F,
+        vector_table: usize,
+    ) -> Result<(), Error>
+    where
+        F: FnOnce() -> bad::Never + Send + 'static,
+    {
+        // The first two ignored `u64` parameters are there to take up all of the registers,
+        // which means that the rest of the arguments are taken from the stack,
+        // where we're able to put them from core 0.
+        if let Some((psm, fifo)) = &mut self.inner {
             extern "C" fn core1_startup<F: FnOnce() -> bad::Never>(
                 _: u64,
                 _: u64,
@@ -198,8 +217,6 @@ impl<'p> Core<'p> {
             // actually sees those writes. However, we know that the RP2040 doesn't have
             // memory caches, and writes happen in-order.
             compiler_fence(Ordering::Release);
-
-            let vector_table = ppb.vtor.read().bits();
 
             // After reset, core 1 is waiting to receive commands over FIFO.
             // This is the sequence to have it jump to some code.
